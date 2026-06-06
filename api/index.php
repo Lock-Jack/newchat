@@ -26,6 +26,10 @@ try {
     echo json_encode(['ok' => false, 'error' => 'Impossible d\'ouvrir la base de données : ' . $e->getMessage()]);
     exit;
 }
+
+// S'assurer que la colonne ip_address existe
+@$db->exec("ALTER TABLE users ADD COLUMN ip_address TEXT");
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $token = $_SERVER['HTTP_X_TOKEN'] ?? $_GET['token'] ?? '';
 
@@ -40,8 +44,9 @@ function getUserByToken($db, $token) {
 
 // Helper: update last_seen
 function touchUser($db, $user_id) {
-    $stmt = $db->prepare("UPDATE users SET last_seen = :t WHERE id = :id");
+    $stmt = $db->prepare("UPDATE users SET last_seen = :t, ip_address = :ip WHERE id = :id");
     $stmt->bindValue(':t', time());
+    $stmt->bindValue(':ip', $_SERVER['REMOTE_ADDR']);
     $stmt->bindValue(':id', $user_id, SQLITE3_INTEGER);
     $stmt->execute();
 }
@@ -69,11 +74,12 @@ switch ($action) {
             echo json_encode(['ok' => true, 'token' => $row['token'], 'pseudo' => $row['pseudo'], 'color' => $row['avatar_color'], 'id' => $row['id']]);
         } else {
             $token_new = bin2hex(random_bytes(16));
-            $stmt2 = $db->prepare("INSERT INTO users (pseudo, token, avatar_color, last_seen) VALUES (:p, :t, :c, :ls)");
+            $stmt2 = $db->prepare("INSERT INTO users (pseudo, token, avatar_color, last_seen, ip_address) VALUES (:p, :t, :c, :ls, :ip)");
             $stmt2->bindValue(':p', $pseudo);
             $stmt2->bindValue(':t', $token_new);
             $stmt2->bindValue(':c', $color);
             $stmt2->bindValue(':ls', time(), SQLITE3_INTEGER);
+            $stmt2->bindValue(':ip', $_SERVER['REMOTE_ADDR']);
             $stmt2->execute();
             $id = $db->lastInsertRowID();
             echo json_encode(['ok' => true, 'token' => $token_new, 'pseudo' => $pseudo, 'color' => $color, 'id' => $id]);
@@ -94,7 +100,7 @@ switch ($action) {
         if (!$user) { echo json_encode(['ok' => false]); exit; }
         touchUser($db, $user['id']);
         $cutoff = time() - 30;
-        $res = $db->query("SELECT id, pseudo, avatar_color FROM users WHERE last_seen > $cutoff ORDER BY pseudo ASC");
+        $res = $db->query("SELECT id, pseudo, avatar_color, ip_address FROM users WHERE last_seen > $cutoff ORDER BY pseudo ASC");
         $users = [];
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) $users[] = $row;
         echo json_encode(['ok' => true, 'users' => $users]);

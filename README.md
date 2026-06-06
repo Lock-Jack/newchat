@@ -42,7 +42,21 @@ Accès depuis un autre appareil du même réseau : `http://[VOTRE_IP]:8080`
 
 ---
 
-## Fonctionnalités
+## Fonctionnalités Clés
+
+- **Mode En Ligne / Hors Ligne** : Un interrupteur dans l'interface utilisateur permet de basculer l'application en mode "hors ligne". Dans ce mode, l'application cesse d'envoyer des signaux de présence et de recevoir des messages, vous rendant invisible pour les autres utilisateurs.
+- **Visibilité des Adresses IP** : La liste des utilisateurs en ligne affiche désormais l'adresse IP locale de chaque appareil connecté, permettant d'identifier plus facilement les machines.
+- **Page d'Administration** : Une interface dédiée (`admin.html`) fournit des statistiques en temps réel sur l'activité du chat :
+    - Nombre d'utilisateurs actuellement en ligne.
+    - Nombre total d'utilisateurs enregistrés.
+    - Nombre total de messages échangés.
+    - Liste des 15 derniers utilisateurs actifs avec leur statut (en ligne/hors ligne) et leur adresse IP.
+
+## Accès à la Page d'Administration
+
+Pour accéder au panneau d'administration, ouvrez simplement `http://[IP_HÔTE]/localchat/admin.html` dans votre navigateur.
+
+---
 
 
 
