@@ -145,6 +145,23 @@
     background: var(--bg3); border-radius: 20px; padding: 4px 10px;
     font-size: 11px; font-family: var(--mono); color: var(--text-muted);
   }
+  /* Toggle Switch */
+  .toggle-container { display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: var(--mono); color: var(--text-muted); cursor: pointer; }
+  .switch {
+    position: relative; display: inline-block; width: 34px; height: 18px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--bg3); transition: .4s; border-radius: 18px; border: 1px solid var(--border);
+  }
+  .slider:before {
+    position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px;
+    background-color: var(--text-muted); transition: .4s; border-radius: 50%;
+  }
+  input:checked + .slider { background-color: var(--red-dim); border-color: var(--red); }
+  input:checked + .slider:before { transform: translateX(16px); background-color: white; }
+
   .pulse {
     width: 7px; height: 7px; border-radius: 50%;
     background: #2ecc71;
@@ -392,6 +409,13 @@
   <div class="topbar">
     <div class="topbar-logo">LocalChat<span>// local network</span></div>
     <div class="topbar-right">
+      <label class="toggle-container">
+        <span>MODE EN LIGNE</span>
+        <div class="switch">
+          <input type="checkbox" id="online-toggle" checked onchange="toggleAppStatus()">
+          <span class="slider"></span>
+        </div>
+      </label>
       <div class="my-pseudo">Connecté en tant que <strong id="my-pseudo-label">—</strong></div>
       <div class="status-pill"><span class="pulse"></span><span id="online-count">0</span> en ligne</div>
     </div>
@@ -468,6 +492,7 @@ let onlineUsers = {};
 let unreadMap = {};
 let pollInterval = null;
 let pingInterval = null;
+let isAppOnline = true;
 let selectedFile = null;
 
 /* ══ LOGIN ══ */
@@ -514,11 +539,26 @@ function startPolling() {
   setInterval(fetchOnline, 5000);
 }
 
+function toggleAppStatus() {
+  isAppOnline = document.getElementById('online-toggle').checked;
+  const statusDot = document.querySelector('.pulse');
+  if (!isAppOnline) {
+    statusDot.style.background = '#e74c3c';
+    statusDot.style.animation = 'none';
+  } else {
+    statusDot.style.background = '#2ecc71';
+    statusDot.style.animation = 'pulse 2s infinite';
+    poll(); // Relancer immédiatement une mise à jour
+  }
+}
+
 async function ping() {
+  if (!isAppOnline) return;
   try { await fetch(`${API}?action=ping&token=${myToken}`); } catch(e) {}
 }
 
 async function fetchOnline() {
+  if (!isAppOnline) return;
   try {
     const res  = await fetch(`${API}?action=online&token=${myToken}`);
     const data = await res.json();
@@ -529,6 +569,7 @@ async function fetchOnline() {
 }
 
 async function poll() {
+  if (!isAppOnline) return;
   try {
     let url = `${API}?action=messages&token=${myToken}&since=${lastTs}`;
     if (currentTarget) url += `&receiver_id=${currentTarget}`;
@@ -565,7 +606,10 @@ function renderOnlineUsers(users) {
     div.dataset.uid = u.id;
     div.innerHTML = `
       <div class="avatar" style="background:${u.avatar_color}">${u.pseudo[0]}</div>
-      <span>${u.pseudo}${isMe ? ' <small style="color:var(--text-dim)">(moi)</small>' : ''}</span>
+      <div style="display:flex;flex-direction:column">
+        <span>${u.pseudo}${isMe ? ' <small style="color:var(--text-dim)">(moi)</small>' : ''}</span>
+        <small style="font-size:9px;color:var(--text-dim);font-family:var(--mono)">${u.ip_address || 'IP inconnue'}</small>
+      </div>
       ${badge}`;
     if (!isMe) div.onclick = () => switchToPrivate(u.id, u.pseudo, u.avatar_color);
     list.appendChild(div);
