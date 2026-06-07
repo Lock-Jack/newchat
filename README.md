@@ -1,7 +1,8 @@
 # LocalChat — Chat Réseau Local (Offline)
 
-Application de chat **100% offline** fonctionnant sur réseau local (WiFi, LAN).  
+Application de chat **offline et en ligne** fonctionnant sur réseau local (WiFi, LAN).  
 Design rouge & gris foncé. Aucun compte requis.
+
 
 ---
 
